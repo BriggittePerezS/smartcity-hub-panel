@@ -6,6 +6,17 @@
 
 ---
 
+## 🌐 Demo en Vivo y Despliegue
+
+La aplicación se encuentra desplegada y operativa en la nube. Puedes interactuar con ella directamente en el siguiente enlace:
+
+🔗 **[Ver Aplicación en Vivo (Render)](https://smartcity-hub-panel.onrender.com)**
+
+> ⚠️ **Nota sobre el Servidor de Pruebas (Render Free):**
+> Al estar alojado en una instancia gratuita de Render, el servidor entra en "estado de suspensión" tras unos minutos de inactividad. Si al hacer clic en el enlace tarda en cargar o muestra un mensaje de *"Not Found"*, **por favor refresca la página (F5 o Recargar)** para despertar el contenedor. Tardará unos segundos en activarse y luego funcionará con total fluidez.
+
+---
+
 ## 💻 Características Principales
 
 * **Gestión de Incidencias en Tiempo Real:** Los usuarios pueden reportar problemas urbanos (averías, limpieza, semáforos) adjuntando descripciones, ubicaciones exactas y evidencias fotográficas.
@@ -23,7 +34,7 @@
 * **Frontend:** HTML5, CSS3 Avanzado, Bootstrap 5 (UI Responsiva)
 * **Iconografía:** FontAwesome 6
 * **Lógica del Cliente:** Vanilla JavaScript (ES6+)
-* **Base de Datos / Persistencia:** Gestión e inyección dinámica de datos relacionales estructurados.
+* **Base de Datos / Persistencia:** Gestión e inyección dinámica de datos relacionales estructurados (SQLite3).
 
 ---
 
@@ -31,7 +42,7 @@
 
 Si deseas ejecutar este proyecto en tu entorno local, sigue estos pasos:
 
-1. **Clonar el repositorio:**
-   ```bash
-   git clone [https://github.com/TU_USUARIO/nombre-del-repositorio.git](https://github.com/TU_USUARIO/nombre-del-repositorio.git)
-   cd nombre-del-repositorio
+### 1. Clonar el repositorio
+```bash
+git clone [https://github.com/BriggittePerezS/smartcity-hub-panel.git](https://github.com/BriggittePerezS/smartcity-hub-panel.git)
+cd smartcity-hub-panel
