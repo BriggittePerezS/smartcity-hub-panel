@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - SmartCity Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { background-color: #f4f7f6; }
+        .navbar-custom { background-color: #0f172a; }
+        .tarjeta-perfil { border: none; border-radius: 12px; }
+        .avatar-perfil { font-size: 70px; color: #64748b; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark navbar-custom shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">📍 MadTech SmartCity Hub</a>
+            <div class="d-flex align-items-center gap-3">
+                <a href="/" class="btn btn-sm btn-outline-light fw-bold px-3">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Volver al Panel
+                </a>
+                <a href="/logout" class="btn btn-sm btn-outline-light fw-bold border-secondary text-white-50 px-3">
+                    <i class="fa-solid fa-right-from-bracket me-1"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                
+                {% with mensajes = get_flashed_messages(with_categories=true) %}
+                    {% if mensajes %}
+                        {% for categoria, mensaje in mensajes %}
+                            <div class="alert alert-{{ categoria }} alert-dismissible fade show fw-bold shadow-sm mb-4" role="alert">
+                                {% if categoria == 'success' %}
+                                    <i class="fa-solid fa-circle-check me-2"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                {% endif %}
+                                {{ mensaje }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="card tarjeta-perfil shadow-sm mb-4 bg-white text-center p-4">
+                    <div class="my-3">
+                        <div class="bg-light d-inline-block p-4 rounded-circle shadow-sm">
+                            <i class="fa-solid fa-user-shield avatar-perfil"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-dark text-capitalize mb-1">{{ usuario_actual }}</h3>
+                    <p class="text-muted small text-uppercase fw-bold mb-3">
+                        Rol asignado: 
+                        <span class="badge {% if rol_actual == 'operario' %}bg-danger{% else %}bg-info text-dark{% endif %} px-3 py-2 rounded-pill font-monospace">
+                            {{ rol_actual }}
+                        </span>
+                    </p>
+                    <hr class="text-muted">
+                    <p class="small text-start text-secondary mb-0 p-2 bg-light rounded border">
+                        <i class="fa-solid fa-circle-info text-primary me-2"></i> 
+                        Las cuentas y permisos del entorno operativo son administrados centralizadamente por el departamento de sistemas de MadTech en el nodo municipal.
+                    </p>
+                </div>
+
+                <div class="card tarjeta-perfil shadow-sm bg-white">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h5 class="mb-0 text-secondary fw-bold">
+                            <i class="fa-solid fa-key text-warning me-2"></i> Modificar Contraseña de Acceso
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form action="/perfil" method="POST">
+                            <div class="mb-3">
+                                <label for="web_clave_actual" class="form-label fw-bold">Contraseña Actual</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fa-solid fa-lock text-muted"></i></span>
+                                    <input type="password" class="form-control" id="web_clave_actual" name="web_clave_actual" placeholder="Ingresa tu clave actual" required>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="web_nueva_clave" class="form-label fw-bold">Nueva Contraseña</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fa-solid fa-key text-muted"></i></span>
+                                    <input type="password" class="form-control" id="web_nueva_clave" name="web_nueva_clave" placeholder="Mínimo 4 caracteres" required>
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success fw-bold py-2 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk me-2"></i> Guardar Nueva Contraseña
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

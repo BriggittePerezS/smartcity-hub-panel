@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCity Hub - Madrid Web</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { background-color: #f4f7f6; }
+        .navbar-custom { background-color: #0f172a; }
+        .fila-incidencia { transition: all 0.4s ease; }
+        .eliminando { opacity: 0; transform: translateX(30px); }
+        .miniatura-evidencia { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; cursor: pointer; transition: transform 0.2s; }
+        .miniatura-evidencia:hover { transform: scale(1.1); }
+        .sin-foto { font-size: 24px; color: #cbd5e1; }
+        
+        /* Tarjetas de estadísticas */
+        .tarjeta-stats { border: none; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; }
+        .tarjeta-stats:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
+        
+        /* Corrección de contraste para botones */
+        .btn-custom-primary:hover {
+            background-color: #0b5ed7 !important;
+            color: #ffffff !important;
+            border-color: #0a58ca !important;
+        }
+        .btn-custom-secondary:hover {
+            background-color: #5c636a !important;
+            color: #ffffff !important;
+            border-color: #565e64 !important;
+        }
+
+        /* ✨ Corrección específica para el hover del botón Salir */
+        .btn-salir-custom:hover {
+            color: #0f172a !important; /* El texto se pone oscuro combinando con la navbar */
+            background-color: #ffffff !important;
+            border-color: #ffffff !important;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark navbar-custom shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">📍 MadTech SmartCity Hub</a>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-white-50 small">
+                    <i class="fa-solid fa-user-shield text-success me-1"></i> 
+                    Usuario: <strong class="text-white">{{ usuario_actual }}</strong> 
+                    (<span class="text-info text-capitalize" id="rolUsuario">{{ rol_actual }}</span>)
+                </span>
+                
+                {% if rol_actual == 'operario' %}
+                <button class="btn btn-sm btn-outline-warning fw-bold px-3" onclick="abrirModalAuditoria()">
+                    <i class="fa-solid fa-clock-rotate-left me-1"></i> Auditoría
+                </button>
+                {% endif %}
+
+                <a href="/perfil" class="btn btn-sm btn-outline-info fw-bold px-3">
+                    <i class="fa-solid fa-user-gear me-1"></i> Mi Perfil
+                </a>
+                <a href="/logout" class="btn btn-sm btn-outline-light fw-bold px-3 btn-salir-custom">
+                    <i class="fa-solid fa-right-from-bracket me-1"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5 mb-5">
+        <div class="row">
+            <div class="col-md-12 text-center mb-4">
+                <h1 class="display-5 fw-bold text-dark">Panel Operativo Web</h1>
+                <p class="lead text-muted">Módulo de Gestión Crítica | Desarrollado por Ing. Briggitte Pérez</p>
+                <hr class="w-25 mx-auto">
+            </div>
+        </div>
+
+        <div id="contenedorAlertas"></div>
+
+        <div class="row mb-4">
+            <div class="col-6 col-md-3 mb-3">
+                <div class="card tarjeta-stats bg-white shadow-sm border-start border-primary border-4 p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small fw-bold text-uppercase mb-1">Total Reportes</p>
+                            <h3 class="fw-bold text-dark mb-0" id="stat-total">{{ stats.total }}</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                            <i class="fa-solid fa-folder-open fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <div class="card tarjeta-stats bg-white shadow-sm border-start border-danger border-4 p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small fw-bold text-uppercase mb-1">Abiertas</p>
+                            <h3 class="fw-bold text-danger mb-0" id="stat-abiertas">{{ stats.abiertas }}</h3>
+                        </div>
+                        <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger">
+                            <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <div class="card tarjeta-stats bg-white shadow-sm border-start border-warning border-4 p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small fw-bold text-uppercase mb-1">En Proceso</p>
+                            <h3 class="fw-bold text-warning mb-0" id="stat-proceso">{{ stats.proceso }}</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning">
+                            <i class="fa-solid fa-screwdriver-wrench fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <div class="card tarjeta-stats bg-white shadow-sm border-start border-success border-4 p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small fw-bold text-uppercase mb-1">Resueltas</p>
+                            <h3 class="fw-bold text-success mb-0" id="stat-resueltas">{{ stats.resueltas }}</h3>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
+                            <i class="fa-solid fa-circle-check fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-3 mb-4">
+            <div class="card-header bg-white py-3">
+                <h4 class="mb-0 text-secondary fw-bold"><i class="fa-solid fa-bullhorn text-success me-2"></i> Reportar Nueva Incidencia</h4>
+            </div>
+            <div class="card-body p-4 bg-white">
+                <form id="formIncidencia" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Descripción del Problema</label>
+                            <input type="text" class="form-control" id="web_desc" placeholder="Ej: Semáforo averiado" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold"><i class="fa-solid fa-location-dot text-danger me-1"></i> Ubicación / Calle</label>
+                            <input type="text" class="form-control" id="web_ubicacion" placeholder="Ej: Gran Vía, 24" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label fw-bold">🚨 Prioridad</label>
+                            <select class="form-select fw-bold" id="web_prioridad">
+                                <option value="Baja">🟢 Baja</option>
+                                <option value="Media" selected>🟡 Media</option>
+                                <option value="Alta">🔴 Alta</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label fw-bold"><i class="fa-solid fa-camera me-1 text-primary"></i> Evidencia</label>
+                            <input type="file" class="form-control" id="web_foto" accept="image/*">
+                        </div>
+                        <div class="col-md-2 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-2">Registrar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-3 mb-3 bg-white">
+            <div class="card-body p-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="buscadorWeb" class="form-control border-start-0 ps-0" 
+                           placeholder="Buscar incidencias por descripción, ubicación, prioridad o estado..." 
+                           onkeyup="filtrarTablaPorTexto()">
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-primary btn-custom-primary fw-bold shadow-sm px-4" id="btnVerTodo" onclick="cargarFiltro('todas')">
+                <i class="fa-solid fa-globe me-2"></i> Ver Todo el Municipio
+            </button>
+            <button class="btn btn-outline-secondary btn-custom-secondary fw-bold shadow-sm px-4 bg-white text-secondary" id="btnVerMisReportes" onclick="cargarFiltro('mis_reportes')">
+                <i class="fa-solid fa-user-tag me-2"></i> Mis Reportes Guardados
+            </button>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-white py-3">
+                <h4 class="mb-0 text-secondary fw-bold"><i class="fa-solid fa-list-check text-primary me-2"></i> Listado Actual de Incidencias</h4>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center ps-4" style="width: 100px;">Foto</th>
+                                <th>Descripción de la Incidencia</th>
+                                <th>📍 Ubicación</th>
+                                <th>🚨 Prioridad</th>
+                                <th>📅 Fecha Reporte</th>
+                                <th class="text-center" style="width: 200px;">Estado del Reporte</th>
+                                <th class="text-center" style="width: 140px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTabla">
+                            {% for fila in datos_web %}
+                            <tr class="fila-incidencia" id="fila-{{ fila['id_incidencia'] }}">
+                                <td class="text-center ps-4">
+                                    {% if fila['foto_url'] %}
+                                        <a href="/static/uploads/{{ fila['foto_url'] }}" target="_blank">
+                                            <img src="/static/uploads/{{ fila['foto_url'] }}" class="miniatura-evidencia shadow-sm">
+                                        </a>
+                                    {% else %}
+                                        <i class="fa-regular fa-image sin-foto"></i>
+                                    {% endif %}
+                                </td>
+                                <td>{{ fila['descripcion'] }}</td>
+                                <td>{{ fila['ubicacion'] }}</td>
+                                
+                                <td>
+                                    {% if rol_actual == 'operario' %}
+                                        <select class="form-select form-select-sm fw-bold text-center border-secondary bg-light select-prioridad" onchange="cambiarPrioridad('{{ fila['id_incidencia'] }}', this.value)">
+                                            <option value="Baja" {% if fila['prioridad'] == 'Baja' %}selected{% endif %}>🟢 Baja</option>
+                                            <option value="Media" {% if fila['prioridad'] == 'Media' %}selected{% endif %}>🟡 Media</option>
+                                            <option value="Alta" {% if fila['prioridad'] == 'Alta' %}selected{% endif %}>🔴 Alta</option>
+                                        </select>
+                                    {% else %}
+                                        {% if fila['prioridad'] == 'Alta' %}
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-1 fw-bold label-prioridad">🔴 Alta</span>
+                                        {% elif fila['prioridad'] == 'Baja' %}
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1 fw-bold label-prioridad">🟢 Baja</span>
+                                        {% else %}
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1 fw-bold label-prioridad">🟡 Media</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                
+                                <td><small class="text-muted fw-semibold">{{ fila['fecha_registro'] if fila['fecha_registro'] else 'Sin fecha' }}</small></td>
+                                <td class="text-center">
+                                    {% if rol_actual == 'operario' %}
+                                        <select class="form-select form-select-sm fw-bold border-secondary bg-light text-center select-estado" onchange="cambiarEstado('{{ fila['id_incidencia'] }}', this.value, this)">
+                                            <option value="Abierta" {% if fila['estado'] == 'Abierta' %}selected{% endif %}>⚠️ Abierta</option>
+                                            <option value="En Proceso" {% if fila['estado'] == 'En Proceso' %}selected{% endif %}>🛠️ En Proceso</option>
+                                            <option value="Resuelta" {% if fila['estado'] == 'Resuelta' %}selected{% endif %}>✅ Resuelta</option>
+                                        </select>
+                                    {% else %}
+                                        {% if fila['estado'] == 'Abierta' %}
+                                            <span class="badge bg-danger text-white px-3 py-2 rounded-pill fw-bold label-estado">⚠️ Abierta</span>
+                                        {% elif fila['estado'] == 'En Proceso' %}
+                                            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold label-estado">🛠️ En Proceso</span>
+                                        {% else %}
+                                            <span class="badge bg-success text-white px-3 py-2 rounded-pill fw-bold label-estado">✅ Resuelta</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if rol_actual == 'operario' %}
+                                        <button class="btn btn-outline-danger btn-sm rounded-circle" onclick="borrarIncidencia('{{ fila['id_incidencia'] }}')">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted small"><i class="fa-solid fa-lock me-1"></i> Bloqueado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if rol_actual == 'operario' %}
+    <div class="modal fade" id="modalAuditoria" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-clock-rotate-left text-warning me-2"></i> Historial de Cambios Operativos</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-striped table-hover align-middle mb-0 small">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th class="ps-3">Incidencia ID</th>
+                                <th>Usuario</th>
+                                <th>Acción</th>
+                                <th>Detalle del Cambio</th>
+                                <th>Fecha y Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoAuditoria">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary fw-bold text-uppercase" data-bs-dismiss="modal">Cerrar Historial</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const rolActual = document.getElementById('rolUsuario').innerText.toLowerCase();
+
+        document.getElementById('formIncidencia').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const desc = document.getElementById('web_desc').value;
+            const ubicacion = document.getElementById('web_ubicacion').value;
+            const prioridad = document.getElementById('web_prioridad').value;
+            const fotoInput = document.getElementById('web_foto').files[0];
+
+            const datosFormulario = new FormData();
+            datosFormulario.append('web_desc', desc);
+            datosFormulario.append('web_ubicacion', ubicacion);
+            datosFormulario.append('web_prioridad', prioridad);
+            if (fotoInput) datosFormulario.append('web_foto', fotoInput);
+
+            try {
+                const respuesta = await fetch('/api/registrar', { method: 'POST', body: datosFormulario });
+                const resultado = await respuesta.json();
+
+                if (resultado.success) {
+                    inyectarFilaTabla(resultado.id, resultado.foto_url, resultado.descripcion, resultado.ubicacion, resultado.prioridad || prioridad, resultado.fecha_registro, resultado.estado);
+                    document.getElementById('formIncidencia').reset();
+                    
+                    document.getElementById('stat-total').innerText = parseInt(document.getElementById('stat-total').innerText) + 1;
+                    document.getElementById('stat-abiertas').innerText = parseInt(document.getElementById('stat-abiertas').innerText) + 1;
+
+                    mostrarAlerta(`Incidencia reportada con éxito en el sistema operativo.`, 'success');
+                } else {
+                    mostrarAlerta('Error: ' + resultado.error, 'danger');
+                }
+            } catch (err) {
+                mostrarAlerta('Error de conexión.', 'danger');
+            }
+        });
+
+        function inyectarFilaTabla(id, foto_url, descripcion, ubicacion, prioridad, fecha_registro, estado) {
+            const cuerpoTabla = document.getElementById('cuerpoTabla');
+            const fotoHTML = foto_url 
+                ? `<a href="/static/uploads/${foto_url}" target="_blank"><img src="/static/uploads/${foto_url}" class="miniatura-evidencia shadow-sm"></a>`
+                : `<i class="fa-regular fa-image sin-foto"></i>`;
+
+            let badgePrioridad = "";
+            if (rolActual === 'operario') {
+                badgePrioridad = `
+                    <select class="form-select form-select-sm fw-bold text-center border-secondary bg-light select-prioridad" onchange="cambiarPrioridad('${id}', this.value)">
+                        <option value="Baja" ${prioridad === 'Baja' ? 'selected' : ''}>🟢 Baja</option>
+                        <option value="Media" ${prioridad === 'Media' ? 'selected' : ''}>🟡 Media</option>
+                        <option value="Alta" ${prioridad === 'Alta' ? 'selected' : ''}>🔴 Alta</option>
+                    </select>
+                `;
+            } else {
+                if (prioridad === 'Alta') badgePrioridad = `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-1 fw-bold label-prioridad">🔴 Alta</span>`;
+                else if (prioridad === 'Baja') badgePrioridad = `<span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1 fw-bold label-prioridad">🟢 Baja</span>`;
+                else badgePrioridad = `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1 fw-bold label-prioridad">🟡 Media</span>`;
+            }
+
+            const controlEstadoHTML = rolActual === 'operario' 
+                ? `
+                    <select class="form-select form-select-sm fw-bold border-secondary bg-light text-center select-estado" onchange="cambiarEstado('${id}', this.value, this)">
+                        <option value="Abierta" ${estado==='Abierta'?'selected':''}>⚠️ Abierta</option>
+                        <option value="En Proceso" ${estado==='En Proceso'?'selected':''}>🛠️ En Proceso</option>
+                        <option value="Resuelta" ${estado==='Resuelta'?'selected':''}>✅ Resuelta</option>
+                    </select>
+                  `
+                : `<span class="badge ${estado==='Abierta'?'bg-danger':estado==='En Proceso'?'bg-warning':'bg-success'} text-white px-3 py-2 rounded-pill fw-bold label-estado">${estado}</span>`;
+
+            const botonAccion = rolActual === 'operario' 
+                ? `<button class="btn btn-outline-danger btn-sm rounded-circle" onclick="borrarIncidencia('${id}')"><i class="fa-solid fa-trash-can"></i></button>`
+                : `<span class="text-muted small"><i class="fa-solid fa-lock me-1"></i> Bloqueado</span>`;
+
+            const nuevaFila = `
+                <tr class="fila-incidencia" id="fila-${id}">
+                    <td class="text-center ps-4">${fotoHTML}</td>
+                    <td>${descripcion}</td>
+                    <td>${ubicacion}</td>
+                    <td>${badgePrioridad}</td>
+                    <td><small class="text-muted fw-semibold">${fecha_registro || 'Sin fecha'}</small></td>
+                    <td class="text-center">${controlEstadoHTML}</td>
+                    <td class="text-center">${botonAccion}</td>
+                </tr>
+            `;
+            cuerpoTabla.insertAdjacentHTML('afterbegin', nuevaFila);
+        }
+
+        async function cargarFiltro(tipo) {
+            if (tipo === 'mis_reportes' && rolActual === 'operario') {
+                document.getElementById('btnVerMisReportes').className = "btn btn-secondary btn-custom-secondary fw-bold shadow-sm px-4 text-white";
+                document.getElementById('btnVerTodo').className = "btn btn-outline-primary btn-custom-primary fw-bold shadow-sm px-4 bg-white text-primary";
+                
+                const cuerpoTabla = document.getElementById('cuerpoTabla');
+                cuerpoTabla.innerHTML = `
+                    <tr class="fila-bloqueo-operario">
+                        <td colspan="7" class="text-center py-5 text-muted bg-light">
+                            <i class="fa-solid fa-user-gear display-6 mb-3 text-secondary"></i>
+                            <h5 class="fw-bold">Vista no aplicable para Operarios</h5>
+                            <p class="small mb-0">Como usuario administrador, tu rol está destinado a la gestión global del municipio.<br>Usa el botón <strong>"Ver Todo el Municipio"</strong> para auditar las incidencias.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const url = tipo === 'mis_reportes' ? '/api/mis_reportes' : '/api/todas_incidencias';
+            
+            if(tipo === 'mis_reportes') {
+                document.getElementById('btnVerMisReportes').className = "btn btn-secondary btn-custom-secondary fw-bold shadow-sm px-4 text-white";
+                document.getElementById('btnVerTodo').className = "btn btn-outline-primary btn-custom-primary fw-bold shadow-sm px-4 bg-white text-primary";
+            } else {
+                document.getElementById('btnVerTodo').className = "btn btn-primary btn-custom-primary fw-bold shadow-sm px-4 text-white";
+                document.getElementById('btnVerMisReportes').className = "btn btn-outline-secondary btn-custom-secondary fw-bold shadow-sm px-4 bg-white text-secondary";
+            }
+
+            try {
+                const respuesta = await fetch(url);
+                const resultado = await respuesta.json();
+                if(resultado.success) {
+                    const cuerpoTabla = document.getElementById('cuerpoTabla');
+                    cuerpoTabla.innerHTML = "";
+                    resultado.incidencias.forEach(inc => {
+                        inyectarFilaTabla(inc.id_incidencia, inc.foto_url, inc.descripcion, inc.ubicacion, inc.prioridad, inc.fecha_registro, inc.estado);
+                    });
+                }
+            } catch (err) { mostrarAlerta('Error al filtrar los datos.', 'danger'); }
+        }
+
+        async function borrarIncidencia(id) {
+            if (!confirm(`¿Estás segura de eliminar este reporte?`)) return;
+            try {
+                const respuesta = await fetch(`/api/borrar/${parseInt(id)}`, { method: 'DELETE' });
+                const res = await respuesta.json();
+                if (res.success) {
+                    const fila = document.getElementById(`fila-${id}`);
+                    fila.classList.add('eliminando');
+                    setTimeout(() => {
+                        fila.remove();
+                        document.getElementById('stat-total').innerText = res.total;
+                        document.getElementById('stat-abiertas').innerText = res.abiertas;
+                        document.getElementById('stat-proceso').innerText = res.proceso;
+                        document.getElementById('stat-resueltas').innerText = res.resueltas;
+                        mostrarAlerta("Reporte eliminado de la base de datos.", "info");
+                    }, 400);
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function cambiarEstado(id, nuevoEstado, selector) {
+            try {
+                const respuesta = await fetch('/api/actualizar_estado', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ web_id: parseInt(id), web_estado: nuevoEstado })
+                });
+                const res = await respuesta.json();
+                if(res.success) {
+                    mostrarAlerta(`Estado actualizado a ${nuevoEstado} y registrado en auditoría.`, 'success');
+                    setTimeout(() => { location.reload(); }, 600);
+                } else {
+                    mostrarAlerta('Error al actualizar el estado.', 'danger');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function cambiarPrioridad(id, nuevaPrioridad) {
+            try {
+                const respuesta = await fetch('/api/actualizar_prioridad', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ web_id: parseInt(id), web_prioridad: nuevaPrioridad })
+                });
+                const res = await respuesta.json();
+                if(res.success) {
+                    mostrarAlerta(`Prioridad actualizada a ${nuevaPrioridad} y registrada en auditoría.`, 'info');
+                    setTimeout(() => { location.reload(); }, 600);
+                } else {
+                    mostrarAlerta('Error al actualizar la prioridad.', 'danger');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function mostrarAlerta(mensaje, tipo) {
+            const contenedor = document.getElementById('contenedorAlertas');
+            const idAlerta = 'alerta-' + Date.now();
+            contenedor.innerHTML = `<div id="${idAlerta}" class="alert alert-${tipo} alert-dismissible fade show fw-bold shadow-sm" role="alert"><i class="fa-solid fa-circle-info me-2"></i> ${mensaje}<button type="button" class="btn-close" aria-label="Close" onclick="document.getElementById('${idAlerta}').remove()"></button></div>`;
+            setTimeout(() => { const el = document.getElementById(idAlerta); if(el) el.remove(); }, 4000);
+        }
+
+        /* 🛠️ BUSCADOR INTELIGENTE POR FILTRADO DE COLUMNAS EXPLICITAS */
+        function filtrarTablaPorTexto() {
+            const textoBuscado = document.getElementById('buscadorWeb').value.toLowerCase().trim();
+            const filas = document.querySelectorAll('#cuerpoTabla tr.fila-incidencia');
+
+            filas.forEach(fila => {
+                const celdas = fila.getElementsByTagName('td');
+                if (celdas.length < 6) return;
+
+                const descripcion = celdas[1].textContent.toLowerCase();
+                const ubicacion = celdas[2].textContent.toLowerCase();
+
+                // Manejo dinámico de Prioridad (Celda 3)
+                let prioridad = "";
+                const selectPrioridad = celdas[3].querySelector('.select-prioridad');
+                if (selectPrioridad) {
+                    prioridad = selectPrioridad.value.toLowerCase();
+                } else {
+                    const labelPrioridad = celdas[3].querySelector('.label-prioridad');
+                    prioridad = labelPrioridad ? labelPrioridad.textContent.toLowerCase() : celdas[3].textContent.toLowerCase();
+                }
+
+                // Manejo dinámico de Estado (Celda 5)
+                let estado = "";
+                const selectEstado = celdas[5].querySelector('.select-estado');
+                if (selectEstado) {
+                    estado = selectEstado.value.toLowerCase();
+                } else {
+                    const labelEstado = celdas[5].querySelector('.label-estado');
+                    estado = labelEstado ? labelEstado.textContent.toLowerCase() : celdas[5].textContent.toLowerCase();
+                }
+
+                const coincide = descripcion.includes(textoBuscado) || 
+                                 ubicacion.includes(textoBuscado) || 
+                                 prioridad.includes(textoBuscado) || 
+                                 estado.includes(textoBuscado);
+
+                if (coincide) {
+                    fila.style.display = "";
+                } else {
+                    fila.style.display = "none";
+                }
+            });
+        }
+
+        function abrirModalAuditoria() {
+            fetch('/api/auditoria')
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    const cuerpo = document.getElementById('cuerpoAuditoria');
+                    cuerpo.innerHTML = "";
+                    
+                    if(data.logs.length === 0) {
+                        cuerpo.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">No hay movimientos guardados en la bitácora todavía.</td></tr>`;
+                    } else {
+                        data.logs.forEach(log => {
+                            let badgeEstilo = log.accion.includes("Estado") ? "bg-dark" : "bg-secondary";
+                            cuerpo.innerHTML += `
+                                <tr>
+                                    <td class="fw-bold text-secondary ps-3">#${log.id_incidencia}</td>
+                                    <td class="fw-bold text-capitalize"><i class="fa-solid fa-user text-muted me-1"></i>${log.usuario}</td>
+                                    <td><span class="badge ${badgeEstilo}">${log.accion}</span></td>
+                                    <td class="text-dark font-monospace" style="font-size: 0.95em;">${log.detalle}</td>
+                                    <td class="text-muted"><i class="fa-regular fa-clock me-1"></i>${log.fecha}</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                    let modalElement = new bootstrap.Modal(document.getElementById('modalAuditoria'));
+                    modalElement.show();
+                }
+            })
+            .catch(err => console.error("Error al conectar con la API de auditoría:", err));
+        }
+    </script>
+</body>
+</html>

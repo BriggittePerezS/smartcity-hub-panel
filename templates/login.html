@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCity Hub - Acceso</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); height: 100vh; display: flex; align-items: center; }
+        .card-login { border: none; border-radius: 16px; background-color: #ffffff; }
+        .btn-guest { background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; transition: all 0.2s; }
+        .btn-guest:hover { background-color: #e2e8f0; color: #0f172a; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="card card-login shadow-lg p-4">
+                    <div class="text-center mb-4">
+                        <span class="fs-1">📍</span>
+                        <h3 class="fw-bold text-dark mt-2">SmartCity Hub</h3>
+                        <p class="text-muted small">Panel de Control Operativo</p>
+                    </div>
+
+                    {% with mensajes = get_flashed_messages(with_categories=true) %}
+                        {% if mensajes %}
+                            {% for categoria, mensaje in mensajes %}
+                                <div class="alert alert-{{ categoria }} alert-dismissible fade show small py-2 fw-bold" role="alert">
+                                    <i class="fa-solid fa-circle-exclamation me-2"></i> {{ mensaje }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form action="/login" method="POST" class="mb-3">
+                        <div class="mb-3">
+                            <label for="usuario" class="form-label fw-bold small text-secondary">Usuario Registrado</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-user"></i></span>
+                                <input type="text" class="form-control" id="usuario" name="web_usuario" placeholder="Ej: briggitte_admin" required>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="clave" class="form-label fw-bold small text-secondary">Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-lock"></i></span>
+                                <input type="password" class="form-control" id="clave" name="web_clave" placeholder="••••••••" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm mb-2">
+                            <i class="fa-solid fa-right-to-bracket me-2"></i> Acceder al Sistema
+                        </button>
+                    </form>
+
+                    <div class="text-center my-2 text-muted small">─ O también puedes ─</div>
+
+                    <a href="/login_invitado" class="btn btn-guest w-100 fw-bold py-2 shadow-sm rounded-3 mb-3 text-decoration-none text-center">
+                        <i class="fa-solid fa-eye me-2 text-primary"></i> Entrar como Invitado (Vecino)
+                    </a>
+                    
+                    <div class="text-center mt-2">
+                        <p class="small text-muted mb-0">¿Quieres probar la Base de Datos?</p>
+                        <a href="/registro" class="small fw-bold text-primary text-decoration-none">Crea una cuenta nueva aquí &rarr;</a>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+instance/
+.env
+venv/
+.venv
+# Si quieres que la base de datos local no se suba porque Render creará una nueva:
+# smartcity.db
